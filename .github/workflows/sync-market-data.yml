@@ -54,7 +54,7 @@ jobs:
       - name: Fetch market data
         run: |
           echo "Running rd_tvfetch.py..."
-          python app/rd_tvfetch.py
+          python rd_tvfetch.py
           echo "✓ Data fetch complete"
 
       - name: Check market_data.db
