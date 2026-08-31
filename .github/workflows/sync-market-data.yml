@@ -48,6 +48,7 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
+          pip install --upgrade --no-cache-dir git+https://github.com/rongardF/tvdatafeed.git
           echo "✓ Dependencies installed"
 
       - name: Fetch market data
