@@ -1,0 +1,103 @@
+name: Sync Market Data to Oracle
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Target environment'
+        required: true
+        default: 'staging'
+        type: choice
+        options:
+          - staging
+          - production
+
+jobs:
+  sync-data:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Validate secrets
+        run: |
+          if [ -z "${{ secrets.ORACLE_SSH_PRIVATE_KEY }}" ]; then
+            echo "ERROR: ORACLE_SSH_PRIVATE_KEY secret not configured"
+            exit 1
+          fi
+          if [ -z "${{ secrets.ORACLE_HOST }}" ]; then
+            echo "ERROR: ORACLE_HOST secret not configured"
+            exit 1
+          fi
+          if [ -z "${{ secrets.ORACLE_USER }}" ]; then
+            echo "ERROR: ORACLE_USER secret not configured"
+            exit 1
+          fi
+          if [ -z "${{ secrets.ORACLE_DATA_PATH }}" ]; then
+            echo "ERROR: ORACLE_DATA_PATH secret not configured"
+            exit 1
+          fi
+          echo "✓ All secrets configured"
+
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install --upgrade --no-cache-dir git+https://github.com/rongardF/tvdatafeed.git
+          echo "✓ Dependencies installed"
+
+      - name: Fetch weekly market data
+        run: |
+          echo "Running rd_tvfetch_M.py..."
+          python rd_tvfetch_M.py
+          echo "✓ Data fetch complete"
+
+      - name: Check market_data_monthly.db
+        run: |
+          if [ -f "market_data_monthly.db" ]; then
+            SIZE=$(du -h market_data_monthly.db | cut -f1)
+            ROWS=$(sqlite3 market_data_monthly.db "SELECT COUNT(*) FROM price_levels;" 2>/dev/null || echo "N/A")
+            echo "✓ market_data_monthly.db ready (size: $SIZE, rows: $ROWS)"
+          else
+            echo "ERROR: market_data_monthly.db not created"
+            exit 1
+          fi
+
+      - name: Setup SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.ORACLE_SSH_PRIVATE_KEY }}" > ~/.ssh/oracle_key
+          chmod 600 ~/.ssh/oracle_key
+          echo "✓ SSH key configured"
+
+      - name: Add Oracle host to known_hosts
+        run: |
+          ssh-keyscan -H ${{ secrets.ORACLE_HOST }} >> ~/.ssh/known_hosts 2>/dev/null || true
+          echo "✓ Host key added"
+
+      - name: Copy market_data_monthly.db to Oracle
+        run: |
+          echo "Syncing to: ${{ secrets.ORACLE_USER }}@${{ secrets.ORACLE_HOST }}:${{ secrets.ORACLE_DATA_PATH }}/market_data_monthly.db"
+          scp -i ~/.ssh/oracle_key \
+            -o StrictHostKeyChecking=accept-new \
+            -o ConnectTimeout=10 \
+            market_data_monthly.db \
+            ${{ secrets.ORACLE_USER }}@${{ secrets.ORACLE_HOST }}:${{ secrets.ORACLE_DATA_PATH }}/market_data_monthly.db
+          echo "✓ Sync complete"
+
+      - name: Cleanup SSH key
+        if: always()
+        run: |
+          rm -f ~/.ssh/oracle_key
+          echo "✓ SSH key cleaned"
+
+      - name: Log completion
+        if: success()
+        run: |
+          echo "✓ Market data fetched and synced to Oracle (${{ github.event.inputs.environment }})"
+          echo "Timestamp: $(date -u +'%Y-%m-%d %H:%M:%S UTC')"
