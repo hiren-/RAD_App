@@ -31,7 +31,7 @@ jobs:
           scp -i ~/.ssh/oracle_key \
             -o StrictHostKeyChecking=accept-new \
             market_data.db \
-            ${{ secrets.ORACLE_USER }}@${{ secrets.ORACLE_HOST }}:${{ secrets.ORACLE_DATA_PATH }}/market_data.db
+            ${{ secrets.ORACLE_USER }}@${{ secrets.ORACLE_HOST }}:${{ secrets.ORACLE_DATA_PATH }}/market_data_gh.db
 
       - name: Cleanup SSH key
         if: always()
