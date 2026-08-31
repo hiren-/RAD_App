@@ -1,4 +1,4 @@
-name: Sync Market Data to Oracle
+name: Sync Weekly Market Data to Oracle
 
 on:
   workflow_dispatch:
