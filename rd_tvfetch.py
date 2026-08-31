@@ -578,7 +578,7 @@ def is_market_hours():
     return market_open <= current_time <= market_close
 
 def main():
-    db_path = "market_data.db"
+    db_path = "market_data_gh.db"
     
     # Initialize processor
     price_levels_processor = PriceLevelsProcessor(db_path)
