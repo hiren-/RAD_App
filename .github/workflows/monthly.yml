@@ -1,5 +1,4 @@
-name: Sync Monthly Market Data to Oracle
-
+name: Sync Monthly Market Data
 on:
   workflow_dispatch:
     inputs:
