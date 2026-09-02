@@ -2,7 +2,7 @@ name: Sync Daily Market Data
 
 on:
  - cron: '50 15 * * Mon-Fri' # Runs at minute 0 past every 6th hour
-  workflow_dispatch: # Allows you to trigger the check manually
+
 
 
 jobs:
