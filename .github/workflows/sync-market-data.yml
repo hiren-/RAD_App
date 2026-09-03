@@ -2,8 +2,6 @@ name: Sync Daily Market Data
 
 
 on:
-  schedule:
-   - cron: '50 15 * * Mon-Fri' 
   workflow_dispatch: # Allows you to trigger the check manually
 
 jobs:
