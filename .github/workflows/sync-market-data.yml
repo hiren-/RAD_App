@@ -1,7 +1,9 @@
 name: Sync Daily Market Data
 
-
 on:
+  schedule:
+    # 16:00 IST = 10:30 UTC, every day
+    - cron: '30 10 * * *'
   workflow_dispatch: # Allows you to trigger the check manually
 
 jobs:
@@ -91,5 +93,5 @@ jobs:
       - name: Log completion
         if: success()
         run: |
-          echo "✓ Market data fetched and synced to Oracle (${{ github.event.inputs.environment }})"
+          echo "✓ Market data fetched and synced to Oracle"
           echo "Timestamp: $(date -u +'%Y-%m-%d %H:%M:%S UTC')"
